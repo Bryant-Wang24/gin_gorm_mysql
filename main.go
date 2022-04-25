@@ -1,28 +1,64 @@
 package main
 
 import (
-	"net/http"
-	"strings"
+	"fmt"
 
-	"github.com/gin-gonic/gin"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
+type Product struct {
+	gorm.Model
+	Code  string
+	Price uint
+}
+
+// 创建表
+func create(db *gorm.DB) {
+
+	db.AutoMigrate(&Product{})
+}
+
+// 插入数据
+func insert(db *gorm.DB) {
+	db.Create(&Product{Code: "L1212", Price: 100})
+}
+
+// 查询
+func find(db *gorm.DB) {
+	var p Product
+	db.First(&p, 1) // 根据主键查询： 查询id为1的product
+	fmt.Printf("p: %v\n", p)
+	db.First(&p, "code = ?", "L1212") // 根据条件查询： 查询code字段为1001的product
+	fmt.Printf("p: %v\n", p)
+}
+
+// 更新
+func update(db *gorm.DB) {
+	var p Product
+	// db.First(&p, 3)``
+	db.First(&p, "price=?", 500)
+	// db.Model(&p).Updates(Product{Code: "1005", Price: 500})
+	db.Model(&p).Updates(map[string]interface{}{"price": 900, "code": "1009"})
+	// p.Price = 200
+	// db.Save(&p)
+}
+
+// 删除
+func delete(db *gorm.DB) {
+	var p Product
+	db.First(&p, 1)
+	db.Delete(&p) // 软删除，并不会真的删除数据，会在表里添加一个标记字段
+}
+
 func main() {
-    // 1.创建路由
-   r := gin.Default()
-   // 2.绑定路由规则，执行的函数
-   // gin.Context，封装了request和response
-   r.GET("/", func(c *gin.Context) {
-      c.String(http.StatusOK, "hello World!")
-   })
-   r.GET("/user/:name/*action",func(c *gin.Context) {
-      name:=c.Param("name")
-      action:=c.Param("action")
-      // 截取
-      action = strings.Trim(action,"/")
-      c.String(http.StatusOK,name + " is " + action)
-   })
-   // 3.监听端口，默认在8080
-   // Run("里面不指定端口号默认为8080") 
-   r.Run(":8000")
+	dsn := "root:485969746wqs@tcp(127.0.0.1:3306)/golang_db?charset=utf8mb4&parseTime=True&loc=Local"
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		panic("failed to connect database")
+	}
+	// insert(db)
+	// find(db)
+	// update(db)
+	delete(db)
 }
