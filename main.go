@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -13,9 +14,14 @@ type Product struct {
 	Price uint
 }
 
+type User struct {
+	gorm.Model
+	Name     string
+	Password string
+}
+
 // 创建表
 func create(db *gorm.DB) {
-
 	db.AutoMigrate(&Product{})
 }
 
@@ -30,6 +36,8 @@ func find(db *gorm.DB) {
 	db.First(&p, 1) // 根据主键查询： 查询id为1的product
 	fmt.Printf("p: %v\n", p)
 	db.First(&p, "code = ?", "L1212") // 根据条件查询： 查询code字段为1001的product
+	result := db.Find(&p)
+	fmt.Println("result", result.RowsAffected)
 	fmt.Printf("p: %v\n", p)
 }
 
@@ -57,8 +65,44 @@ func main() {
 	if err != nil {
 		panic("failed to connect database")
 	}
+	r := gin.Default()
+	r.GET("/ping", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "pong",
+		})
+	})
+	r.POST("/admin/login", func(c *gin.Context) {
+		name := c.PostForm("name")
+		password := c.PostForm("password")
+		fmt.Println(name, password)
+		// 查询用户是否存在
+		var user User
+		db.Where("name = ?", name).First(&user)
+		fmt.Println(user)
+		if user.ID == 0 {
+			c.JSON(200, gin.H{
+				"code":    1,
+				"message": "用户名不存在",
+			})
+		} else {
+			if user.Password == password {
+				c.JSON(200, gin.H{
+					"code":    0,
+					"message": "登录成功",
+					"data":    user,
+				})
+
+			} else {
+				c.JSON(200, gin.H{
+					"code":    1,
+					"message": "用户名或密码错误",
+				})
+			}
+		}
+	})
 	// insert(db)
 	// find(db)
 	// update(db)
-	delete(db)
+	// delete(db)
+	r.Run() // 监听并在 0.0.0.0:8080 上启动服务
 }
