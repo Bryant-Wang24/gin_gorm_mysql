@@ -16,7 +16,7 @@ type Product struct {
 
 type User struct {
 	gorm.Model
-	Name     string
+	Username string
 	Password string
 }
 
@@ -72,13 +72,13 @@ func main() {
 		})
 	})
 	r.POST("/admin/login", func(c *gin.Context) {
-		name := c.PostForm("name")
+		username := c.PostForm("username")
 		password := c.PostForm("password")
-		fmt.Println(name, password)
+		fmt.Println(username, password)
 		// 查询用户是否存在
 		var user User
-		db.Where("name = ?", name).First(&user)
-		fmt.Println(user)
+		db.Where("username = ?", username).First(&user)
+		fmt.Println("user", user.ID)
 		if user.ID == 0 {
 			c.JSON(200, gin.H{
 				"code":    1,
