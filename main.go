@@ -16,8 +16,8 @@ type Product struct {
 
 type User struct {
 	gorm.Model
-	Username string
-	Password string
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 // 创建表
